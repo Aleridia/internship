@@ -37,7 +37,7 @@ Chaque lien connecté à une ressource doit contenir un identifiant unique de la
 
 **Authentification, autorisation et moyens** :
 
-* **Authentification** : Les plateformes LTI agissent comme OpenID et lest *LTI Messages* donc des tokens OpenID. Mais on peut utiliser d'autres méthodes.
+* **Authentification** : Les plateformes LTI agissent comme OpenID et les *LTI Messages* sont donc des tokens OpenID. Mais on peut utiliser d'autres méthodes.
 * **Autorisation** : L'accès aux ressources et fonctionnalités. Il y a deux niveaux : 
   * Dans une couche LTI : définit les moyens qu'un outil peut utiliser sur la plateforme.
   * Ou LTI peut transmettre les autorisations qu'un outil procure à travers la plateforme.
@@ -65,7 +65,7 @@ Chaque lien connecté à une ressource doit contenir un identifiant unique de la
 
 **Resource link** : fait référence à un lien qui pointe sur une ressource donnée par un outil.
 
-**Resource like launche request** : vient d'un *resource link* classique.  Il doit identifier ce lien. Il faudrait inclure le contexte dans lequel le lien vient, que cela soit l'utilisateur qui fasse la demande (Sauf si anonyme) et inclure diverses informations (rôle, plateforme...).
+**Resource like launch request** : vient d'un *resource link* classique. Il doit identifier ce lien. Il faudrait inclure le contexte dans lequel le lien vient, que cela soit l'utilisateur qui fasse la demande (Sauf si anonyme) et inclure diverses informations (rôle, plateforme...).
 Grâce à ça l'outil va définir s'il doit donner l'accès et si c'est le cas, comment présenter les données à l'utilisateur.  
 
 **Format d'un Resource link**: 
