@@ -1,0 +1,51 @@
+* Branche étudiée :
+Current SHA1 : c54d3bb9fbfabedb87e42ea9e9891f988620567f
+
+* Détection dans le code de l'utilisation de "token"
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/server/learnocaml_server.ml][/src/server/learnocaml_server.ml]]
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/main/learnocaml_client.ml][/src/main/learnocaml_client.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/main/learnocaml_server_args.ml#L14][/src/main/learnocaml_server_args.ml#L14]]
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/toplevel/learnocaml_toplevel.ml#L27][/src/toplevel/learnocaml_toplevel.ml#L27]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/toplevel/learnocaml_toplevel_output.mli#L81-L82][/src/toplevel/learnocaml_toplevel_output.mli#L81-L82]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/toplevel/learnocaml_toplevel_output.ml][/src/toplevel/learnocaml_toplevel_output.ml]]
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/ace-lib/ocaml_mode.ml][/src/ace-lib/ocaml_mode.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/ace-lib/ocaml_mode.mli#L35][/src/ace-lib/ocaml_mode.mli#L35]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/ace-lib/ace.mli][/src/ace-lib/ace.mli]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/ace-lib/ace.ml][/src/ace-lib/ace.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/ace-lib/ace_bindings.js#L42-L44][/src/ace-lib/ace_bindings.js#L42-L44]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/ace-lib/ace_types.mli][/src/ace-lib/ace-types.mli]]
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_teacher_tab.mli#L10][/src/app/learnocaml_teacher_tab.mli#L10]] 
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_teacher_tab.ml][/src/app/learnocaml_teacher_tab.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_common.ml][/src/app/learnocaml_common.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_common.mli][/src/app/learnocaml_common.mli]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_student_view.ml][/src/app/learnocaml_student_view.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_exercise_main.ml][/src/app/learnocaml_exercise_main.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_index_main.ml][/src/app/learnocaml_index_main.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/server_caller.ml#L117-L118][/src/app/server_caller.ml#L117-L118]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/server_caller.mli#L27][/src/app/server_caller.mli#L27]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_local_storage.ml#L144-L148][/src/app/learnocaml_local_storage.ml#L144-L148]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_local_storage.mli#L47][/src/app/learnocaml_local_storage.mli#L47]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_description_main.ml][/src/app/learnocaml_description_main.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_partition_view.ml][/src/app/learnocaml_partition_view.ml]]
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/utils/learnocaml_partition_create.ml#L26][/src/utils/learnocaml_partition_create.ml#L26]]
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_store.mli][/src/state/learnocaml_store.mli]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_store.ml][/src/state/learnocaml_store.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_api.mli][/src/state/learnocaml_api.mli]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_api.ml][/src/state/learnocaml_api.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_data.ml][/src/state/learnocaml_data.ml]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/state/learnocaml_data.mli][/src/state/learnocaml_data.mli]]
+
+
+* Détection de "TOKEN"
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/main/learnocaml_client.ml][/src/main/learnocaml_client.ml]]
+
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_index_main.ml#L565][/src/app/learnocaml_index_main.ml#L565]]
+[[https://github.com/ocaml-sf/learn-ocaml/blob/master/src/app/learnocaml_teacher_tab.ml#L73][/src/app/learnocaml_teacher_tab.ml#L73]]
