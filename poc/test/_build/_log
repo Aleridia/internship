@@ -1,0 +1,17 @@
+### Starting build.
+# Target: src/main.ml.depends, tags: { package(logs), package(lwt), bin_annot, extension:ml, file:src/main.ml, ocaml, ocamldep, quiet, traverse }
+ocamlfind ocamldep -package lwt -package logs -modules src/main.ml > src/main.ml.depends
+# Target: src/main.cmo, tags: { package(logs), package(lwt), bin_annot, byte, compile, extension:cmo, extension:ml, file:src/main.cmo, file:src/main.ml, implem, ocaml, quiet, traverse }
+ocamlfind ocamlc -c -bin-annot -package lwt -package logs -I src -o src/main.cmo src/main.ml
+# Target: src/main.cmx, tags: { package(logs), package(lwt), bin_annot, compile, extension:cmx, extension:ml, file:src/main.cmx, file:src/main.ml, implem, native, ocaml, quiet, traverse }
+ocamlfind ocamlopt -c -bin-annot -package lwt -package logs -I src -o src/main.cmx src/main.ml
+# Target: src/main.native, tags: { package(logs), package(lwt), bin_annot, dont_link_with, extension:native, file:src/main.native, link, native, ocaml, program, quiet, traverse }
+ocamlfind ocamlopt -linkpkg -package lwt -package logs -I src src/main.cmx -o src/main.native
++ ocamlfind ocamlopt -linkpkg -package lwt -package logs -I src src/main.cmx -o src/main.native
+File "_none_", line 1:
+Error: No implementations provided for the following modules:
+         Logs_lwt referenced from src/main.cmx
+         Unix referenced from src/main.cmx
+         Lwt_io referenced from src/main.cmx
+Command exited with code 2.
+# Compilation unsuccessful.

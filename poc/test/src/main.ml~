@@ -1,0 +1,10 @@
+open lib
+
+let file = "test.txt"
+let message = "Test"
+
+let a = ecrire "test.txt" "Test"
+
+
+
+

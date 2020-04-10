@@ -1,0 +1,4 @@
+true:   package(lwt),package(logs)
+true:   bin_annot
+
+
