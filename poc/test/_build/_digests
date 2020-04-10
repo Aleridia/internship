@@ -1,6 +1,0 @@
-"Resource: /home/lapin/stage/poc/test/src/main.ml": "\016q\190\217B|'\132\221\182\249\224;\024\222\157"
-"Rule: ocaml: cmo* -> byte (%=src/main )": "C\212\183\137\139\194\246bLE\221\168\178-3\151"
-"Rule: ocaml: ml -> cmo & cmi (%=src/main )": "\159\237\175\155U\157\210\244CL\252\178\005\018\246\199"
-"Rule: ocaml: cmx* & o* -> native (%=src/main )": "\019y\151\230Cy|O[\152\1401-\173F\127"
-"Rule: ocaml dependencies ml (%=src/main )": "u\219\134\224\140\191\160C\128\157\156\\\146\145Eb"
-"Rule: ocaml: ml & cmi -> cmx & o (%=src/main )": "\164\018\136\018\003]\201\201\197\203\019\243.\1427\233"

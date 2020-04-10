@@ -1,0 +1,4 @@
+(executable
+ (name hello_world)
+ (libraries lwt.unix))
+
