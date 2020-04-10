@@ -1,8 +1,0 @@
-### Starting build.
-# Target: src/main.ml.depends, tags: { package(logs), package(logs.lwt), package(lwt), package(lwt.unix), bin_annot, extension:ml, file:src/main.ml, ocaml, ocamldep, quiet, thread, traverse }
-ocamlfind ocamldep -package lwt -package logs -package lwt.unix -package logs.lwt -modules src/main.ml > src/main.ml.depends # cached
-# Target: src/main.cmo, tags: { package(logs), package(logs.lwt), package(lwt), package(lwt.unix), bin_annot, byte, compile, extension:cmo, extension:ml, file:src/main.cmo, file:src/main.ml, implem, ocaml, quiet, thread, traverse }
-ocamlfind ocamlc -c -bin-annot -thread -package lwt -package logs -package lwt.unix -package logs.lwt -I src -o src/main.cmo src/main.ml # cached
-# Target: src/main.byte, tags: { package(logs), package(logs.lwt), package(lwt), package(lwt.unix), bin_annot, byte, dont_link_with, extension:byte, file:src/main.byte, link, ocaml, program, quiet, thread, traverse }
-ocamlfind ocamlc -linkpkg -thread -package lwt -package logs -package lwt.unix -package logs.lwt -I src src/main.cmo -o src/main.byte
-# Compilation successful.
