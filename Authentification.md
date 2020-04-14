@@ -17,7 +17,7 @@ Ne pas laisser s'authentifier des comptes sensibles.
 
 * Longueur minimum de 8 caractères.
 * Maximum de 128.
-* Vérifier l'algo de hashage : Il peut tronquer ne pas aller jusqu'à 128 caractères.
+* Vérifier l'algo de hashage : Il peut tronquer et ne pas aller jusqu'à 128 caractères.
 * Saler les mot de passes
 * Donner l'accès à tous les caractères possibles.
 * Avoir la possibilité de le changer ainsi que l'email (Avec validation par email avec token, questions secrètes...). Faire changer le mot de passe sur le site et ne pas l'envoyer par email.
