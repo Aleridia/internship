@@ -9,4 +9,8 @@
 
 * Nestat : `netstat -tulpn`
 
+* Variables nommées : `~var:var` <=> `~var` 
+
+* Variables optionnelles : `?(step=1)`:  A une valeur par défaut et peut être remplacé.
+
   
