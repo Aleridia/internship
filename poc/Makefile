@@ -31,7 +31,7 @@ debug: sanity
 
 # check that packages can be found
 sanity:
-	ocamlfind query lwt logs
+	ocamlfind query lwt cohttp cohttp-lwt-unix logs jwto lwt.unix lwt.ppx
 
 test: native
 	echo '[1, 2, "three", {"four": 4}]' | ./main.native
