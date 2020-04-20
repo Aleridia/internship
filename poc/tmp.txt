@@ -1,0 +1,11 @@
+⊘ remove    cohttp                  1.2.0
+│ ⊘ remove    cohttp-lwt              1.2.0
+│ ⊘ remove    cohttp-lwt-unix         1.2.0
+│ ⊘ remove    conduit                 1.4.0
+│ ⊘ remove    conduit-lwt             1.4.0
+│ ⊘ remove    conduit-lwt-unix        1.4.0
+│ ⊘ remove    learn-ocaml-client      0.12
+│ ⊘ remove    ocplib-json-typed       0.6
+│ ⊘ remove    uri                     2.2.1
+│ ↘ downgrade lwt                     3.3.0 to 3.0.0
+
