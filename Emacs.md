@@ -15,3 +15,11 @@ Changer de buffer : `C-x b`
 Merlin : `M-x merlin-use`
 
 Afficher les bliblio avec auto complétion : `Lwt C-c C-t`
+
+Locate (Voir la fonction) : `C-c C-l`
+
+Voir le .mli/.ml : `C-c C-a`
+
+Afficher le type de l'exp : `C-c C-t`
+
+Fermer une fenêtre : `C-x 0`

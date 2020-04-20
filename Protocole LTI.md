@@ -14,7 +14,7 @@ Systèmes utilisés : OAuth2, OpenID COnnect, JWT.
 
 ### Vocabulaire et définition :
 
-**Tool Deployment** : Définit dans quel contexte l'outil peut être déployé. Si déployé hors de la plateforme mère : doit avoir un `deployment_id` et chaque message envoyé entre la plateforme mère et tierce doit avec le `deployment_id` et le `client_id`.
+**Tool Deployment** : Définit dans quel contexte l'outil peut être déployé. Si déployé hors de la plateforme mère : doit avoir un `deployment_id` et chaque message envoyé entre la plateforme mère et tierce doit se faire avec le `deployment_id` et le `client_id`.
 Généralement le `deployment_id` correspond à un id de compte, potentiellement celui qui déploie l'outil.
 Si l'outil est déployé plusieurs fois : chaque instance à son propre `development_id`. Le `client_id` reste le même.
 Si déployé une fois par `client_id`, il peut avoir un `development_id` unique car la clé sera les deux id.
