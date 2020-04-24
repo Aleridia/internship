@@ -1,4 +1,4 @@
-true:   package(jwto),package(lwt),package(lwt_ppx),package(logs),package(lwt.unix),package(cohttp),package(cohttp-lwt-unix)
+true:   package(netstring),package(tls),package(str),package(jwto),package(lwt),package(lwt_ppx),package(logs),package(lwt.unix),package(cohttp),package(cohttp-lwt-unix)
 true:   bin_annot,thread
 
 

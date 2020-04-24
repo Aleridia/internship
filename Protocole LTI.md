@@ -7,6 +7,7 @@
 * http://www.imsglobal.org/spec/lti/v1p3/
 * https://github.com/elaastic/elaastic-questions-server/tree/develop/src/main/kotlin/org/elaastic/questions/lti
 * https://docs.moodle.org/38/en/External_tool_settings
+* https://cssplice.github.io/lti.html
 
 Spécifie des méthodes pour que des systèmes/structures d'apprentissages puissent communiquer avec des applications tierces.
 Version standard : 1.3.
@@ -27,7 +28,7 @@ Chaque lien connecté à une ressource doit contenir un identifiant unique de la
 
 **Contextes et ressources** : 
 
-* **Contextes** : Tout ce qui va tourner autour des ressources : utilisateurs, rôles...
+* **Contextes** : Tout ce qui va tourner autour des ressources : utilisateurs, rôles... Généralement ça va être le cours pour lequel l'outil est déployé.
 * **Ressources** : Peut représenter un item, des ressources ou des classifications (Pre-work, Week 1). Dans une structure/ressource il peut y avoir plusieurs *LTI Links* afin de définir plusieurs contextes. Pour les distinguer il faut un `resource_link_id`.
 
 **Utilisateurs et rôles** :
@@ -102,5 +103,26 @@ Grâce à ça l'outil va définir s'il doit donner l'accès et si c'est le cas, 
 
 
 
-### Appliqué à Moodle :
+# Pour Moodle
 
+https://www.imsglobal.org/spec/security/v1p0
+
+Au début il envoie une requête à l'outil pour se login avec 4 paramètres :
+
+* iss : issuer identifier. Il identifie Moodle.
+* login_hint : la trace de login.
+* target_link_uri : le lien vers lequel l'outil va rediriger quand il aura fini ses trucs de login.
+* lti_message_hint : la trace du message LTI.
+
+L'outil doit faire sa vie (Potentiellement demander un login pour bien confirmer qu'il s'agisse de l'user) et renvoyer vers le target_link_uri avec différents paramètres POST de cette forme :
+
+* scope: openid
+* response_type: id_token
+* cliend_id: l'id qu'on veut donner à Moodle
+* redirect_url: là où on veut rediriger l'user une fois que Moodle a fait sa vie. Correspond au target_link_uri.
+* login_hint: le même que donné
+* state: Une valeur opaque (Encodé et tout) pour pouvoir ajouter une sécurité et éviter le CSRF.
+* response_mode: form_post
+* nonce: String qui associe une session client avec un ID Token. La valeur est transmise sans modification de la demande d'authentification au jeton ID.
+* prompt:none
+* lti_message_hint: le même que donné

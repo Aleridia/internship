@@ -5,10 +5,8 @@ open Cohttp_lwt_unix
 open Jwto
 open Printf
 
-
 let passwdD = ref "lapin"
 let loginD = ref "pinpix"
-let clientId = ref "SDF7ASDLSFDS9"
 
 (* Rq = required; Re = recommended *)
 exception Fail of string
@@ -84,53 +82,14 @@ let string_of_stream ?(max_size = 1024 * 1024) s =
     | e -> Lwt.fail e
   end
 
-let contains s1 s2 =
-    let re = Str.regexp_string s2
-    in
-        try ignore (Str.search_forward re s1 0); true
-        with Not_found -> false
 
 let traiter_token token = match Jwto.decode_and_verify my_secret token with
   | Ok s -> Server.respond_string ~status: `OK ~body: (Jwto.show_payload @@ Jwto.get_payload s) () 
   | Error e -> Server.respond_string ~status: `OK ~body: "Moodle t naze" ()
 
+let traiter_requete req = Server.respond_string ~status: `OK ~body: req ()
 
-(* Extrait les arguments POST voulu dans l'ordre donné *)
-let extract_args nom_args post = let liste_a_trier = String.split_on_char '&' post in
-                                 (* Va ajouter dans liste_ret la cellule de liste_a_trier qui contient le terme recherché *)
-                                 let rec trier_arg terme liste_a_trier =
-                                   match liste_a_trier with
-                                   | s::l -> if contains s terme then s
-                                             else trier_arg terme l
-                                   | _ -> ""
-                                 in
-                                               
-                                 (* Retourne une liste triée dans l'ordre donné de liste_nom *)
-                                 let rec liste_return liste_nom liste_a_trier =
-                                   match liste_nom with
-                                   | s :: l -> (trier_arg s liste_a_trier) :: liste_return l liste_a_trier
-                                   | [] -> []
-                                 in
-                                 (*liste_return liste_a_trier @@ List.rev nom_args*)
-                                 liste_return nom_args liste_a_trier
-                                 
 
-(* Puis pour chaque elem de la liste, prendre la première occurence du = et retourner le string du rang de = à la fin su string *)
-let traiter_requete req = let tri = String.concat "" @@ extract_args ["iss";"login_hint";"target_link_uri";"lti_message_hint"] req in
-                          if String.compare tri "" = 0 then   (* Ne pas oublier de changer le <> *)                      
-                            Server.respond_string ~status: `OK ~body: req ()
-                          else
-                          let scope = "openid" in
-                          let response_type = "id_token" in
-                          let client_id = "yttrtfgrt" in
-                          let state = "KnIINhyGGYYPezfrz" in (* Faire la fonction *)
-                          let response_mode = "form_post" in
-                          let nonce = "fdshuHBBjgVGVgvGVBGggVGHVgV" in (* Faire la fonction *)
-                          let prompt = "none" in
-                          let body = sprintf "scope=%s&response_type=%s&client_id=%s&redirect_url=http://localhost:8000/shutdown&login_hint=2&state=%s&response_mode=%s&nonce=%s&prompt=%s&lti_message_hint=3" scope response_type client_id state response_mode nonce prompt in
-                          let headers = Cohttp.Header.init_with "content-type" "application/x-www-form-urlencoded" in
-                          Server.respond_string ~headers ~status: `OK ~body ()
-                             
 let server =
   (* La réponse du serveur *)
   let callback _conn req body =
@@ -142,7 +101,7 @@ let server =
                  Server.respond_string ~status:`OK ~body:"shutting down" ()
        
        | `POST -> (match Request.has_body req with (* POST *)
-                  |`Yes -> body |> Cohttp_lwt.Body.to_string >>= traiter_requete
+                  |`Yes -> traiter_requete @@ body =|<  Cohttp_lwt.Body.to_string body
                   | `No -> Server.respond_string ~status: `Bad_request ~body: "Missing POST body" ()
                   | _ -> Server.respond_string ~status: `Bad_request ~body: "Unknown POST body" ())
        | _ -> Server.respond_string ~status: `Not_acceptable ~body:"Unsuported request" () ) (* Si ce n'est ni GET ni POST *)
@@ -179,7 +138,7 @@ let url = Uri.of_string (sprintf "http://%s:%d/launch" address port)
 let url_shutdown = Uri.of_string (sprintf "http://%s:%d/shutdown" address port)
 
 let client () = 
- let body = body_token token_test in (* Création du body *)
+  let body = body_token token_test in (* Création du body *)
   Cohttp_lwt_unix.Client.post ~body url >>= fun (resp,body) ->
   Cohttp_lwt__Body.to_string body >>= fun body -> (*Affichage de la réponse*)
   print_string "Body : ";
@@ -187,13 +146,13 @@ let client () =
   print_string " Status : ";
   print_string @@ Cohttp__.Code.string_of_status @@ Cohttp__Response.status resp;
   print_newline ();
-  return (exit 1)
-  
+  (* Client.get url_shutdown >>= fun _ ->*) return (exit 1)
+ 
 let () =  match Lwt_unix.fork () with
   | 0 ->
      Unix.sleep 2;
      Printf.eprintf "client is %d\n%!" (Unix.getpid ());
-     Lwt_main.run (client ())
+     Lwt_main.run (client ());
   | pid ->
      Printf.eprintf "server is %d\n%!" (Unix.getpid ());
      Lwt_main.run server
