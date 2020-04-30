@@ -1,51 +1,25 @@
-open Format
 open Lwt
 open Cohttp
 open Cohttp_lwt_unix
-open Jwto
 open Printf
+open GapiOAuth1
 
+(*************************** Variables ******************)
 
 let passwdD = ref "lapin"
 let loginD = ref "pinpix"
-let clientId = ref "SDF7ASDLSFDS9"
+let my_secret = "secret"
+let url = "http://localhost:8000/launch"
+let oauth_timestamp = ref "tmp"
+let oauth_nonce = ref "tmp"
+let oauth_signature_method = ref "HMAC-SHA1"
+let oauth_signature = ref "tmp"
+let oauth_consumer_key = ref "tmp"
+let oauth_version = ref "tmp"
+let oauth_callback = ref "tmp"
 
-(* Rq = required; Re = recommended *)
-exception Fail of string
-let my_payload =
-  [
-    (* LTI launch *)
-    ("oauth_consumer_key","Key OAuth");
-    ("deployment_id", "1");                     (* Rq *)
-    ("client_id", "1");                         (* Rq *)
-    ("lti_version","1.3");                      (* Rq *)
-    ("lti_message_type","Type msg LTI");        (* Rq *)
-    ("lti_deployment_id","Pareil que le deployment_id"); 
-    (* Contexte *)
-    ("context_id","1");                                     (* Re *)
-    ("context_title","Titre contexte");                     (* Re *)
-    ("context_type","Type contexte");
-    ("context_label","Label contexte");                     (* Re *)
-    (* Ressource link *)
-    ("ressource_link_id","1");                   (* Rq *)
-    ("ressource_link_description","Desc RL");                (* Re *)
-    ("ressource_link_title","Titre RL");
-    (* User *)
-    ("user_id","1");                                         (* Re *)
-    ("lis_person_name_family","Lehcim");                     (* Re *)
-    ("lis_person_name_given","Michel");                      (* Re *)
-    ("lis_person_name_full","Michel");                       (* Re *)
-    ("role","enseignant");                                   (* Re *)
-    ("lis_person_contact_email_primary","michel@gmail.com"); (* Re *)
-    (* Plateforme *)
-    ("plateform_guid","1");
-    ("plateform_contact_email","plt@gmail.com");
-    ("plateform_url","Moodle.fr");
-    ("plateform_version","1.15.2");
-  ]
+(********************* Fonctions annexes de traitement ***************************)
 
-let my_secret =
-  "My$ecretK3y"
 
 (* Lis la valeur dans un sous dossier *)
 let lireValeur login = 
@@ -61,28 +35,7 @@ let lireValeur login =
     raise e
 
 
-
-exception Too_long_body
-
-let string_of_stream ?(max_size = 1024 * 1024) s =
-  let b = Buffer.create (64 * 1024) in
-  let pos = ref 0 in
-  let add_string s =
-    pos := !pos + String.length s;
-    if !pos > max_size then
-      Lwt.fail Too_long_body
-    else begin
-      Buffer.add_string b s;
-      Lwt.return_unit
-    end
-  in
-  Lwt.catch begin function () ->
-    Lwt_stream.iter_s add_string s >>= fun () ->
-    Lwt.return (Some (Buffer.contents b))
-  end begin function
-    | Too_long_body -> Lwt.return None
-    | e -> Lwt.fail e
-  end
+(*************************   Traitement POST ****************************)
 
 let contains s1 s2 =
     let re = Str.regexp_string s2
@@ -90,60 +43,142 @@ let contains s1 s2 =
         try ignore (Str.search_forward re s1 0); true
         with Not_found -> false
 
-let traiter_token token = match Jwto.decode_and_verify my_secret token with
-  | Ok s -> Server.respond_string ~status: `OK ~body: (Jwto.show_payload @@ Jwto.get_payload s) () 
-  | Error e -> Server.respond_string ~status: `OK ~body: "Moodle t naze" ()
+ (* Renvoie le terme recherché dans la liste*)
+let rec trouver_arg terme =
+  function
+  | s::l -> if contains s terme then s
+            else trouver_arg terme l
+  | _ -> "Error"
 
+(* Renvoie le terme recherché dans la liste mais décodé (Encodage en HTTP) *)
+let trouver_et_decoder terme liste =  Uri.pct_decode @@ trouver_arg terme liste
 
 (* Extrait les arguments POST voulu dans l'ordre donné *)
-let extract_args nom_args post = let liste_a_trier = String.split_on_char '&' post in
-                                 (* Va ajouter dans liste_ret la cellule de liste_a_trier qui contient le terme recherché *)
-                                 let rec trier_arg terme liste_a_trier =
-                                   match liste_a_trier with
-                                   | s::l -> if contains s terme then s
-                                             else trier_arg terme l
-                                   | _ -> ""
-                                 in
-                                               
-                                 (* Retourne une liste triée dans l'ordre donné de liste_nom *)
-                                 let rec liste_return liste_nom liste_a_trier =
-                                   match liste_nom with
-                                   | s :: l -> (trier_arg s liste_a_trier) :: liste_return l liste_a_trier
-                                   | [] -> []
-                                 in
-                                 (*liste_return liste_a_trier @@ List.rev nom_args*)
-                                 liste_return nom_args liste_a_trier
-                                 
+let trier_args nom_args post =
+  let liste_a_trier = String.split_on_char '&' post in
+  
+  (* Retourne une liste triée dans l'ordre donné de liste_nom *)
+  let rec liste_return liste_nom liste_args =
+    match liste_nom with
+    | s :: l -> (trouver_arg s liste_args) :: liste_return l liste_args
+    | [] -> []
+  in
+  (*liste_return liste_a_trier @@ List.rev nom_args*)
+  liste_return nom_args liste_a_trier
 
-(* Puis pour chaque elem de la liste, prendre la première occurence du = et retourner le string du rang de = à la fin su string *)
-let traiter_requete req = let tri = String.concat "" @@ extract_args ["iss";"login_hint";"target_link_uri";"lti_message_hint"] req in
-                          if String.compare tri "" = 0 then   (* Ne pas oublier de changer le <> *)                      
-                            Server.respond_string ~status: `OK ~body: req ()
-                          else
-                          let scope = "openid" in
-                          let response_type = "id_token" in
-                          let client_id = "yttrtfgrt" in
-                          let state = "KnIINhyGGYYPezfrz" in (* Faire la fonction *)
-                          let response_mode = "form_post" in
-                          let nonce = "fdshuHBBjgVGVgvGVBGggVGHVgV" in (* Faire la fonction *)
-                          let prompt = "none" in
-                          let body = sprintf "scope=%s&response_type=%s&client_id=%s&redirect_url=http://localhost:8000/shutdown&login_hint=2&state=%s&response_mode=%s&nonce=%s&prompt=%s&lti_message_hint=3" scope response_type client_id state response_mode nonce prompt in
-                          let headers = Cohttp.Header.init_with "content-type" "application/x-www-form-urlencoded" in
-                          Server.respond_string ~headers ~status: `OK ~body ()
-                             
+
+(* Extrait le body d'un string : arg=body *)
+exception Not_found
+let extraire arg =
+  let index =
+    match String.index_opt arg '=' with
+    | Some x -> x + 1
+    | None -> raise Not_found
+  in 
+  String.sub arg index @@ (String.length arg) - index
+
+let extraire_et_decoder terme liste = Uri.pct_decode @@ extraire @@ trouver_arg terme liste
+
+(* prend une liste d'arg avec cette syntaxe = "arg1=body1;arg2=body2" et renvoie simplement le body*)
+let rec extract_args = function
+  | s::l -> (extraire s) :: extract_args l
+  | [] -> []
+ 
+
+let verifier_oauth =
+  !oauth_version <> "Error" && !oauth_consumer_key <> "Error" && !oauth_signature <> "Error" && !oauth_nonce <> "Error" && !oauth_timestamp <> "Error"
+
+(* Transforme une liste de string de type key=value en liste de couple (key*secret) *)
+let convert_to_gapi liste =
+  let extraire_both arg =
+    let index =
+      match String.index_opt arg '=' with
+      | Some x -> x + 1
+      | None -> raise Not_found
+    in 
+    (Uri.pct_decode @@ String.sub arg 0 (index-1), Uri.pct_decode @@ String.sub arg index @@ (String.length arg) - index)
+  in
+  let rec eval = function
+    | x::l -> (extraire_both x):: eval l
+    | [] -> []
+  in
+  eval liste
+
+
+(*Avant : Uri.pct_encode *) (* Netencoding.Url.encode ~plus:false *)
+let signature_oauth liste_args http_method basic_uri consumer_key secret =
+        let couple_encode = (* 1 : encoder les keys/values *)
+          List.map (
+              fun (k,v) -> (Netencoding.Url.encode k, Netencoding.Url.encode v))
+          @@ convert_to_gapi liste_args
+        in 
+        let couple_trie =   (* 2 : Trier par valeur de key *)
+          List.sort   
+            (fun (k1, v1) (k2,v2) ->
+              let res = compare k1 k2 in
+              if res = 0 then compare v1 v2 else res) couple_encode
+        in 
+        let liste_concat =  (* 3 : Les mettre sous la forme key=value&key2=value2*)
+          String.concat "&"
+          @@ List.map
+               (fun (k,v) -> k ^ "=" ^ v) couple_trie
+        in 
+        let signature_base_string =     (* 4 : Ajouter la méthode HTTP ainsi que l'uri *)
+          sprintf "%s&%s&%s" (String.uppercase_ascii http_method) (Netencoding.Url.encode basic_uri) (Netencoding.Url.encode liste_concat)
+        in
+        let signing_key = (Netencoding.Url.encode consumer_key) ^ "&" ^ (Netencoding.Url.encode secret) in  (* 5 : Créer la signing_key *)
+        let encodage = Netencoding.Base64.encode
+                       @@ Cstruct.to_string
+                       @@ Nocrypto.Hash.SHA1.hmac (Cstruct.of_string signing_key) (Cstruct.of_string signature_base_string)
+        in
+        encodage  
+
+                   (**************************** Serveur et lancement du serveur *******************************)
+
+(* Traitement de la requête POST *)
+let traiter_requete req =
+  let liste_args = String.split_on_char '&' req in
+  (* Init variables *)
+  if extraire_et_decoder "oauth_signature_method" liste_args <> !oauth_signature_method then
+    Server.respond_error ~status:`Not_implemented ~body:(sprintf "Try with %s oauth signature method" !oauth_signature_method) ()
+  else
+    (
+      oauth_signature := extraire_et_decoder "oauth_signature" liste_args;
+      oauth_timestamp := extraire_et_decoder "oauth_timestamp" liste_args;
+      oauth_nonce := extraire_et_decoder "oauth_nonce" liste_args;
+      oauth_version := extraire_et_decoder "oauth_version" liste_args;
+      oauth_consumer_key := extraire_et_decoder "oauth_consumer_key" liste_args;
+      oauth_callback := extraire_et_decoder "oauth_callback" liste_args;
+      if not verifier_oauth then
+        Server.respond_error ~status:`Bad_request ~body:"Missing oauth args" ()
+      else 
+        (* Vérifier la signature *)
+        let test = generate_signature GapiCore.HttpMethod.POST "http://localhost:8000/launch" (convert_to_gapi liste_args) GapiCore.SignatureMethod.HMAC_SHA1 !oauth_consumer_key my_secret in
+        let rep = (signature_oauth liste_args "post" "http://localhost:8000/launch" !oauth_consumer_key my_secret) in
+        let reservse_gapi = String.concat "&" @@ List.map (fun (a,b) -> a ^ b) (convert_to_gapi liste_args) in
+              (* Req = les parameters déjà encodés et mis comme il faut*)
+        Server.respond_string ~status:`OK ~body:req () 
+    )
+
+      (* Après l'enco changer le + par " " et "%7" par ~ *)
+
+
+
+          
 let server =
   (* La réponse du serveur *)
   let callback _conn req body =
     let uri = Request.uri req in
     match Uri.path uri with (* Match l'URI *)
+      
     |"/launch" ->
       (match req |> Request.meth with (* Type de requête *)
-       | `GET -> async (fun () -> Lwt_unix.sleep 0.1 >>= fun () -> exit 0); (* TODO : Faire en sorte que la requête LTI puisse passer par un get *)
+       | `GET -> async (fun () -> Lwt_unix.sleep 0.1 >>= fun () -> exit 0);
                  Server.respond_string ~status:`OK ~body:"shutting down" ()
        
        | `POST -> (match Request.has_body req with (* POST *)
                   |`Yes -> body |> Cohttp_lwt.Body.to_string >>= traiter_requete
-                  | `No -> Server.respond_string ~status: `Bad_request ~body: "Missing POST body" ()
+                  |`No -> Server.respond_string ~status: `Bad_request ~body: "Missing POST body" ()
                   | _ -> Server.respond_string ~status: `Bad_request ~body: "Unknown POST body" ())
        | _ -> Server.respond_string ~status: `Not_acceptable ~body:"Unsuported request" () ) (* Si ce n'est ni GET ni POST *)
 
@@ -167,19 +202,13 @@ let server =
 
 (* Client side *)
 
-let token_test = Jwto.encode Jwto.HS256 my_secret my_payload
-
-let body_token = function
-  | Ok v -> Cohttp_lwt__Body.of_string v
-  | Error e -> raise (Fail e)
-
 let port = 8000
 let address = "127.0.0.1"
 let url = Uri.of_string (sprintf "http://%s:%d/launch" address port)
 let url_shutdown = Uri.of_string (sprintf "http://%s:%d/shutdown" address port)
 
 let client () = 
- let body = body_token token_test in (* Création du body *)
+ let body = Cohttp_lwt__Body.of_string "teste body" in
   Cohttp_lwt_unix.Client.post ~body url >>= fun (resp,body) ->
   Cohttp_lwt__Body.to_string body >>= fun body -> (*Affichage de la réponse*)
   print_string "Body : ";
@@ -193,7 +222,7 @@ let () =  match Lwt_unix.fork () with
   | 0 ->
      Unix.sleep 2;
      Printf.eprintf "client is %d\n%!" (Unix.getpid ());
-     Lwt_main.run (client ())
+  (* Lwt_main.run (client ())*)
   | pid ->
      Printf.eprintf "server is %d\n%!" (Unix.getpid ());
      Lwt_main.run server
