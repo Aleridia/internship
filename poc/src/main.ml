@@ -109,7 +109,7 @@ let convert_to_gapi liste =
 let signature_oauth liste_args http_method basic_uri consumer_key secret =
         let couple_encode = (* 1 : encoder les keys/values *)
           List.map (
-              fun (k,v) -> (Netencoding.Url.encode k, Netencoding.Url.encode v))
+              fun (k,v) -> (Netencoding.Url.encode ~plus:false k, Netencoding.Url.encode ~plus:false v))
           @@ convert_to_gapi liste_args
         in 
         let couple_trie =   (* 2 : Trier par valeur de key *)
@@ -124,9 +124,9 @@ let signature_oauth liste_args http_method basic_uri consumer_key secret =
                (fun (k,v) -> k ^ "=" ^ v) couple_trie
         in 
         let signature_base_string =     (* 4 : Ajouter la méthode HTTP ainsi que l'uri *)
-          sprintf "%s&%s&%s" (String.uppercase_ascii http_method) (Netencoding.Url.encode basic_uri) (Netencoding.Url.encode liste_concat)
+          sprintf "%s&%s&%s" (String.uppercase_ascii http_method) (Netencoding.Url.encode ~plus:false basic_uri) (Netencoding.Url.encode ~plus:false liste_concat)
         in
-        let signing_key = (Netencoding.Url.encode consumer_key) ^ "&" ^ (Netencoding.Url.encode secret) in  (* 5 : Créer la signing_key *)
+        let signing_key = (Netencoding.Url.encode ~plus:false consumer_key) ^ "&" ^ (Netencoding.Url.encode ~plus:false secret) in  (* 5 : Créer la signing_key *)
         let encodage = Netencoding.Base64.encode
                        @@ Cstruct.to_string
                        @@ Nocrypto.Hash.SHA1.hmac (Cstruct.of_string signing_key) (Cstruct.of_string signature_base_string)
@@ -156,8 +156,11 @@ let traiter_requete req =
         let test = generate_signature GapiCore.HttpMethod.POST "http://localhost:8000/launch" (convert_to_gapi liste_args) GapiCore.SignatureMethod.HMAC_SHA1 !oauth_consumer_key my_secret in
         let rep = (signature_oauth liste_args "post" "http://localhost:8000/launch" !oauth_consumer_key my_secret) in
         let reservse_gapi = String.concat "&" @@ List.map (fun (a,b) -> a ^ b) (convert_to_gapi liste_args) in
-              (* Req = les parameters déjà encodés et mis comme il faut*)
-        Server.respond_string ~status:`OK ~body:req () 
+        (* Req = les parameters déjà encodés et mis comme il faut*)
+        if test = !oauth_signature || rep = !oauth_signature then
+          Server.respond_string ~status:`OK ~body:"OK" ()
+        else
+          Server.respond_string ~status:`OK ~body:"Non" ()
     )
 
       (* Après l'enco changer le + par " " et "%7" par ~ *)
