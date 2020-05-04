@@ -37,31 +37,73 @@ let lireValeur login =
 
 (*************************   Traitement POST ****************************)
 
- (* Renvoie la value d'une key dans une liste de couple de type (key,value) *)
-let rec get_value key =
+let contains s1 s2 =
+    let re = Str.regexp_string s2
+    in
+        try ignore (Str.search_forward re s1 0); true
+        with Not_found -> false
+
+ (* Renvoie le terme recherché dans la liste*)
+let rec trouver_arg terme =
   function
-  | (k,v)::l -> if k = key then v
-            else get_value key l
+  | s::l -> if contains s terme then s
+            else trouver_arg terme l
   | _ -> "Error"
 
+(* Renvoie le terme recherché dans la liste mais décodé (Encodage en HTTP) *)
+let trouver_et_decoder terme liste =  Uri.pct_decode @@ trouver_arg terme liste
 
-let rec verifier_oauth liste_args =
-  (* Traitement de la requête POST *)
-      oauth_signature := get_value "oauth_signature" liste_args;
-      oauth_timestamp := get_value "oauth_timestamp" liste_args;
-      oauth_nonce := get_value "oauth_nonce" liste_args; (* Penser à vérifier le nonce pour savoir s'il n'a pas été déjà utilisé *)
-      oauth_version := get_value "oauth_version" liste_args;
-      oauth_consumer_key := get_value "oauth_consumer_key" liste_args;
-      oauth_callback := get_value "oauth_callback" liste_args;
-      !oauth_version <> "Error"
-      && !oauth_consumer_key <> "Error"
-      && !oauth_signature <> "Error"
-      && !oauth_nonce <> "Error"
-      && !oauth_timestamp <> "Error"
+(* Extrait les arguments POST voulu dans l'ordre donné *)
+let trier_args nom_args post =
+  let liste_a_trier = String.split_on_char '&' post in
+  
+  (* Retourne une liste triée dans l'ordre donné de liste_nom *)
+  let rec liste_return liste_nom liste_args =
+    match liste_nom with
+    | s :: l -> (trouver_arg s liste_args) :: liste_return l liste_args
+    | [] -> []
+  in
+  (*liste_return liste_a_trier @@ List.rev nom_args*)
+  liste_return nom_args liste_a_trier
+
+
+(* Extrait le body d'un string : arg=body *)
+exception Not_found
+let extraire arg =
+  let index =
+    match String.index_opt arg '=' with
+    | Some x -> x + 1
+    | None -> raise Not_found
+  in 
+  String.sub arg index @@ (String.length arg) - index
+
+let extraire_et_decoder terme liste = Uri.pct_decode @@ extraire @@ trouver_arg terme liste
+
+(* prend une liste d'arg avec cette syntaxe = "arg1=body1;arg2=body2" et renvoie simplement le body*)
+let rec extract_args = function
+  | s::l -> (extraire s) :: extract_args l
+  | [] -> []
+ 
+
+let verifier_oauth =
+  !oauth_version <> "Error" && !oauth_consumer_key <> "Error" && !oauth_signature <> "Error" && !oauth_nonce <> "Error" && !oauth_timestamp <> "Error"
 
 (* Transforme une liste de string de type key=value en liste de couple (key*value) *)
-let remove_args liste = 
- List.filter (fun (a,b) -> a <> "oauth_signature") liste
+let convert_to_gapi liste = 
+  let extraire_both arg =
+    let index =
+      match String.index_opt arg '=' with
+      | Some x -> x + 1
+      | None -> raise Not_found
+    in 
+    (String.sub arg 0 (index-1), String.sub arg index @@ (String.length arg) - index)
+  in
+  let rec eval = function
+    | x::l -> (extraire_both x):: eval l
+    | [] -> []
+  in
+  let enlever_sign liste = List.filter (fun (a,b) -> a <> "oauth_signature") liste in
+  enlever_sign @@ eval liste
 
 
 (*Avant : Uri.pct_encode *) (* Netencoding.Url.encode ~plus:false *)
@@ -69,7 +111,7 @@ let signature_oauth liste_args http_method basic_uri consumer_key secret =
         let couple_encode = (* 1 : encoder les keys/values *)
           List.map (
               fun (k,v) -> (Netencoding.Url.encode ~plus:false k, Netencoding.Url.encode ~plus:false v))
-          @@ remove_args liste_args
+          @@ convert_to_gapi liste_args
         in
         let couple_trie =   (* 2 : Trier par valeur de key *)
           List.sort   
@@ -86,7 +128,9 @@ let signature_oauth liste_args http_method basic_uri consumer_key secret =
           sprintf "%s&%s&%s" (String.uppercase_ascii http_method) (Netencoding.Url.encode ~plus:false basic_uri) (Netencoding.Url.encode ~plus:false liste_concat)
         in
         let signing_key = (Netencoding.Url.encode ~plus:false consumer_key) ^ "&" ^ (Netencoding.Url.encode ~plus:false secret) in  (* 5 : Créer la signing_key *)
-        let encodage = Netencoding.Base64.encode @@ Cstruct.to_string @@ Nocrypto.Hash.SHA1.hmac (Cstruct.of_string signing_key) (Cstruct.of_string signature_base_string)
+        let encodage = Netencoding.Base64.encode
+                       @@ Cstruct.to_string
+                       @@ Nocrypto.Hash.SHA1.hmac (Cstruct.of_string signing_key) (Cstruct.of_string signature_base_string)
         in
        encodage  
 
@@ -94,24 +138,34 @@ let signature_oauth liste_args http_method basic_uri consumer_key secret =
 
 (* Traitement de la requête POST *)
 let traiter_requete req =
-  let liste_args = Netencoding.Url.dest_url_encoded_parameters req in
+  let liste_args = String.split_on_char '&' req in
   (* Init variables *)
-  if get_value "oauth_signature_method" liste_args <> !oauth_signature_method then
+  if extraire_et_decoder "oauth_signature_method" liste_args <> !oauth_signature_method then
     Server.respond_error ~status:`Not_implemented ~body:(sprintf "Try with %s oauth signature method" !oauth_signature_method) ()
   else
     (
-      if not (verifier_oauth liste_args) then
+      oauth_signature := extraire_et_decoder "oauth_signature" liste_args;
+      oauth_timestamp := extraire_et_decoder "oauth_timestamp" liste_args;
+      oauth_nonce := extraire_et_decoder "oauth_nonce" liste_args; (* Penser à vérifier le nonce pour savoir s'il n'a pas été déjà utilisé *)
+      oauth_version := extraire_et_decoder "oauth_version" liste_args;
+      oauth_consumer_key := extraire_et_decoder "oauth_consumer_key" liste_args;
+      oauth_callback := extraire_et_decoder "oauth_callback" liste_args;
+      if not verifier_oauth then
         Server.respond_error ~status:`Bad_request ~body:"Missing oauth args" ()
       else 
         (* Vérifier la signature *)
-        let fun_gapi = generate_signature GapiCore.HttpMethod.POST "http://localhost:8000/launch" (remove_args liste_args) GapiCore.SignatureMethod.HMAC_SHA1 !oauth_consumer_key my_secret in
-        let fun_perso = signature_oauth liste_args "post" "localhost:8000/launch" !oauth_consumer_key my_secret in
+        let test = generate_signature GapiCore.HttpMethod.POST "http://localhost:8000/launch" (convert_to_gapi liste_args) GapiCore.SignatureMethod.HMAC_SHA1 !oauth_consumer_key my_secret in
+        let rep = signature_oauth liste_args "post" "localhost:8000/launch" !oauth_consumer_key my_secret in
+        let reverse_gapi liste = String.concat "??" @@ List.map (fun (a,b) -> a ^ "=" ^ b) (convert_to_gapi liste) in
         (* Req = les parameters déjà encodés et mis comme il faut*)
-        if fun_gapi = !oauth_signature || fun_perso = !oauth_signature then
+        if test = !oauth_signature || rep = !oauth_signature then
           Server.respond_string ~status:`OK ~body:"OK" ()
         else
-          Server.respond_string ~status:`OK ~body:fun_gapi ()
+          Server.respond_string ~status:`OK ~body:!oauth_consumer_key ()
     )
+
+      (* Après l'enco changer le + par " " et "%7" par ~ *)
+
 
 
           
