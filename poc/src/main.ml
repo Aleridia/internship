@@ -8,7 +8,7 @@ open GapiOAuth1
 
 let passwdD = ref "lapin"
 let loginD = ref "pinpix"
-let my_secret = "secret"
+let my_secret = "zsefffrgghfdtfuizerpzzerzejrnzeizenrz"
 let url = "http://localhost:8000/launch"
 let oauth_timestamp = ref "tmp"
 let oauth_nonce = ref "tmp"
@@ -16,7 +16,7 @@ let oauth_signature_method = ref "HMAC-SHA1"
 let oauth_signature = ref "tmp"
 let oauth_consumer_key = ref "tmp"
 let oauth_version = ref "tmp"
-let oauth_callback = ref "tmp"
+
 
 (********************* Fonctions annexes de traitement ***************************)
 
@@ -52,7 +52,6 @@ let rec verifier_oauth liste_args =
       oauth_nonce := get_value "oauth_nonce" liste_args; (* Penser à vérifier le nonce pour savoir s'il n'a pas été déjà utilisé *)
       oauth_version := get_value "oauth_version" liste_args;
       oauth_consumer_key := get_value "oauth_consumer_key" liste_args;
-      oauth_callback := get_value "oauth_callback" liste_args;
       !oauth_version <> "Error"
       && !oauth_consumer_key <> "Error"
       && !oauth_signature <> "Error"
@@ -65,30 +64,31 @@ let remove_args liste =
 
 
 (*Avant : Uri.pct_encode *) (* Netencoding.Url.encode ~plus:false *)
-let signature_oauth liste_args http_method basic_uri consumer_key secret =
-        let couple_encode = (* 1 : encoder les keys/values *)
-          List.map (
-              fun (k,v) -> (Netencoding.Url.encode ~plus:false k, Netencoding.Url.encode ~plus:false v))
-          @@ remove_args liste_args
-        in
-        let couple_trie =   (* 2 : Trier par valeur de key *)
-          List.sort   
-            (fun (k1, v1) (k2,v2) ->
-              let res = compare k1 k2 in
-              if res = 0 then compare v1 v2 else res) couple_encode
-        in 
-        let liste_concat =  (* 3 : Les mettre sous la forme key=value&key2=value2*)
-          String.concat "&"
-          @@ List.map
-               (fun (k,v) -> k ^ "=" ^ v) couple_trie
-        in 
-        let signature_base_string =     (* 4 : Ajouter la méthode HTTP ainsi que l'uri *)
-          sprintf "%s&%s&%s" (String.uppercase_ascii http_method) (Netencoding.Url.encode ~plus:false basic_uri) (Netencoding.Url.encode ~plus:false liste_concat)
-        in
-        let signing_key = (Netencoding.Url.encode ~plus:false consumer_key) ^ "&" ^ (Netencoding.Url.encode ~plus:false secret) in  (* 5 : Créer la signing_key *)
-        let encodage = Netencoding.Base64.encode @@ Cstruct.to_string @@ Nocrypto.Hash.SHA1.hmac (Cstruct.of_string signing_key) (Cstruct.of_string signature_base_string)
-        in
-       encodage  
+let signature_oauth liste_args http_method basic_uri secret =
+  let couple_encode = (* 1 : encoder les keys/values *)
+    List.map (
+        fun (k,v) -> (Netencoding.Url.encode ~plus:false k, Netencoding.Url.encode ~plus:false v))
+    @@ remove_args liste_args
+  in
+  let couple_trie =   (* 2 : Trier par valeur de key *)
+    List.sort   
+      (fun (k1, v1) (k2,v2) ->
+        let res = compare k1 k2 in
+        if res = 0 then compare v1 v2 else res)
+      couple_encode
+  in 
+  let liste_concat =  (* 3 : Les mettre sous la forme key=value&key2=value2*)
+    String.concat "&"
+    @@ List.map
+         (fun (k,v) -> k ^ "=" ^ v) couple_trie
+  in 
+  let signature_base_string =     (* 4 : Ajouter la méthode HTTP ainsi que l'uri *)
+    sprintf "%s&%s&%s" (String.uppercase_ascii http_method) (Netencoding.Url.encode ~plus:false basic_uri) (Netencoding.Url.encode ~plus:false liste_concat)
+  in
+  let signing_key = (Netencoding.Url.encode ~plus:false secret) ^ "&" in  (* 5 : Créer la signing_key *)
+  let encodage = Netencoding.Base64.encode @@ Cstruct.to_string @@ Nocrypto.Hash.SHA1.hmac ~key:(Cstruct.of_string signing_key) (Cstruct.of_string signature_base_string)
+  in
+  encodage  
 
                    (**************************** Serveur et lancement du serveur *******************************)
 
@@ -104,17 +104,15 @@ let traiter_requete req =
         Server.respond_error ~status:`Bad_request ~body:"Missing oauth args" ()
       else 
         (* Vérifier la signature *)
-        let fun_gapi = generate_signature GapiCore.HttpMethod.POST "http://localhost:8000/launch" (remove_args liste_args) GapiCore.SignatureMethod.HMAC_SHA1 !oauth_consumer_key my_secret in
-        let fun_perso = signature_oauth liste_args "post" "localhost:8000/launch" !oauth_consumer_key my_secret in
-        (* Req = les parameters déjà encodés et mis comme il faut*)
-        if fun_gapi = !oauth_signature || fun_perso = !oauth_signature then
+        let fun_perso = signature_oauth liste_args "post" "http://localhost:8000/launch" my_secret in
+        (* Req = les parameters déjà encodés et mis comme il faut *)
+        if fun_perso = !oauth_signature then
           Server.respond_string ~status:`OK ~body:"OK" ()
         else
-          Server.respond_string ~status:`OK ~body:fun_gapi ()
+          Server.respond_string ~status:`OK ~body:(fun_perso ^ "&&&" ^ !oauth_signature) ()
     )
 
-
-          
+         
 let server =
   (* La réponse du serveur *)
   let callback _conn req body =
@@ -127,9 +125,9 @@ let server =
                  Server.respond_string ~status:`OK ~body:"shutting down" ()
        
        | `POST -> (match Request.has_body req with (* POST *)
-                  |`Yes -> body |> Cohttp_lwt.Body.to_string >>= traiter_requete
-                  |`No -> Server.respond_string ~status: `Bad_request ~body: "Missing POST body" ()
-                  | _ -> Server.respond_string ~status: `Bad_request ~body: "Unknown POST body" ())
+                   | `Yes -> body |> Cohttp_lwt.Body.to_string >>= traiter_requete
+                   | `No -> Server.respond_string ~status: `Bad_request ~body: "Missing POST body" ()
+                   | _ -> Server.respond_string ~status: `Bad_request ~body: "Unknown POST body" ())
        | _ -> Server.respond_string ~status: `Not_acceptable ~body:"Unsuported request" () ) (* Si ce n'est ni GET ni POST *)
 
     | "/shutdown" ->  async (fun () -> Lwt_unix.sleep 0.1 >>= fun () -> exit 0); (* Pour shutdown le server *)
@@ -138,11 +136,11 @@ let server =
     | "/get" -> let login = Uri.get_query_param uri "login" in (* Tester les requêtes GET *)
                  let psswd = Uri.get_query_param uri "mdp" in
                  (match login,psswd with
-                  |Some l,Some p -> if l = !loginD && p = !passwdD then
+                  | Some l,Some p -> if l = !loginD && p = !passwdD then
                                       body |> Cohttp_lwt.Body.to_string >|= (fun body -> lireValeur l) >>= (fun body -> Server.respond_string ~status: `OK ~body ())
                                     else
                                       Server.respond_string ~status: `Not_acceptable ~body:("Invalid login/password") ()
-                  |_,_ -> Server.respond_string ~status: `Not_acceptable ~body:"No param" ())
+                  | _,_ -> Server.respond_string ~status: `Not_acceptable ~body:"No param" ())
 
     | _ -> Server.respond_string ~status: `Not_found ~body:"Error 404" ()  (* Error 404 *)
   in
@@ -155,7 +153,6 @@ let server =
 let port = 8000
 let address = "127.0.0.1"
 let url = Uri.of_string (sprintf "http://%s:%d/launch" address port)
-let url_shutdown = Uri.of_string (sprintf "http://%s:%d/shutdown" address port)
 
 let client () = 
  let body = Cohttp_lwt__Body.of_string "teste body" in
