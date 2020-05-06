@@ -2,13 +2,10 @@ open Lwt
 open Cohttp
 open Cohttp_lwt_unix
 open Printf
-open GapiOAuth1
 
 (*************************** Variables ******************)
 
-let passwdD = ref "lapin"
-let loginD = ref "pinpix"
-let my_secret = "zsefffrgghfdtfuizerpzzerzejrnzeizenrz"
+let my_secret = "b7f70b00-48e1-47ea-9184-850b3ec867f1"
 let url = "http://localhost:8000/launch"
 let oauth_timestamp = ref "tmp"
 let oauth_nonce = ref "tmp"
@@ -16,24 +13,6 @@ let oauth_signature_method = ref "HMAC-SHA1"
 let oauth_signature = ref "tmp"
 let oauth_consumer_key = ref "tmp"
 let oauth_version = ref "tmp"
-
-
-(********************* Fonctions annexes de traitement ***************************)
-
-
-(* Lis la valeur dans un sous dossier *)
-let lireValeur login = 
-  let nomF = String.concat "." [login;"txt"] in
-  let ic = open_in (String.concat "/" ["usr";nomF]) in
-  try
-    let line = input_line ic in
-    flush stdout;
-    close_in ic;
-    line
-  with e ->
-    close_in_noerr ic;
-    raise e
-
 
 (*************************   Traitement POST ****************************)
 
@@ -58,7 +37,7 @@ let rec verifier_oauth liste_args =
       && !oauth_nonce <> "Error"
       && !oauth_timestamp <> "Error"
 
-(* Transforme une liste de string de type key=value en liste de couple (key*value) *)
+
 let remove_args liste = 
  List.filter (fun (a,b) -> a <> "oauth_signature") liste
 
@@ -95,8 +74,7 @@ let signature_oauth liste_args http_method basic_uri secret =
 (* Traitement de la requête POST *)
 let traiter_requete req =
   let liste_args = Netencoding.Url.dest_url_encoded_parameters req in
-  (* Init variables *)
-  if get_value "oauth_signature_method" liste_args <> !oauth_signature_method then
+  if get_value "oauth_signature_method" liste_args <> !oauth_signature_method then (* Si ce n'est pas HMAC-SHA1 *)
     Server.respond_error ~status:`Not_implemented ~body:(sprintf "Try with %s oauth signature method" !oauth_signature_method) ()
   else
     (
@@ -104,43 +82,27 @@ let traiter_requete req =
         Server.respond_error ~status:`Bad_request ~body:"Missing oauth args" ()
       else 
         (* Vérifier la signature *)
-        let fun_perso = signature_oauth liste_args "post" "http://localhost:8000/launch" my_secret in
+        let fun_perso = signature_oauth liste_args "post" url my_secret in
         (* Req = les parameters déjà encodés et mis comme il faut *)
         if fun_perso = !oauth_signature then
-          Server.respond_string ~status:`OK ~body:"OK" ()
+          Server.respond_string ~status:`OK ~body:("Signature OK (" ^ fun_perso ^ ")") ()
         else
-          Server.respond_string ~status:`OK ~body:(fun_perso ^ "&&&" ^ !oauth_signature) ()
+          Server.respond_string ~status:`Unauthorized ~body:"OAuth signature does not match" ()
     )
 
          
 let server =
-  (* La réponse du serveur *)
-  let callback _conn req body =
+    let callback _conn req body =
     let uri = Request.uri req in
     match Uri.path uri with (* Match l'URI *)
       
     |"/launch" ->
       (match req |> Request.meth with (* Type de requête *)
-       | `GET -> async (fun () -> Lwt_unix.sleep 0.1 >>= fun () -> exit 0);
-                 Server.respond_string ~status:`OK ~body:"shutting down" ()
-       
        | `POST -> (match Request.has_body req with (* POST *)
                    | `Yes -> body |> Cohttp_lwt.Body.to_string >>= traiter_requete
                    | `No -> Server.respond_string ~status: `Bad_request ~body: "Missing POST body" ()
                    | _ -> Server.respond_string ~status: `Bad_request ~body: "Unknown POST body" ())
-       | _ -> Server.respond_string ~status: `Not_acceptable ~body:"Unsuported request" () ) (* Si ce n'est ni GET ni POST *)
-
-    | "/shutdown" ->  async (fun () -> Lwt_unix.sleep 0.1 >>= fun () -> exit 0); (* Pour shutdown le server *)
-                      Server.respond_string ~status:`OK ~body:"shutting down" ()
-
-    | "/get" -> let login = Uri.get_query_param uri "login" in (* Tester les requêtes GET *)
-                 let psswd = Uri.get_query_param uri "mdp" in
-                 (match login,psswd with
-                  | Some l,Some p -> if l = !loginD && p = !passwdD then
-                                      body |> Cohttp_lwt.Body.to_string >|= (fun body -> lireValeur l) >>= (fun body -> Server.respond_string ~status: `OK ~body ())
-                                    else
-                                      Server.respond_string ~status: `Not_acceptable ~body:("Invalid login/password") ()
-                  | _,_ -> Server.respond_string ~status: `Not_acceptable ~body:"No param" ())
+       | _ -> Server.respond_string ~status: `Not_acceptable ~body:"Unsuported request" () ) (* Si ce n'est pas POST *)
 
     | _ -> Server.respond_string ~status: `Not_found ~body:"Error 404" ()  (* Error 404 *)
   in
@@ -148,28 +110,4 @@ let server =
   Server.create ~backlog:10 ~mode:(`TCP (`Port 8000)) (Server.make ~callback ())
 
 
-(* Client side *)
-
-let port = 8000
-let address = "127.0.0.1"
-let url = Uri.of_string (sprintf "http://%s:%d/launch" address port)
-
-let client () = 
- let body = Cohttp_lwt__Body.of_string "teste body" in
-  Cohttp_lwt_unix.Client.post ~body url >>= fun (resp,body) ->
-  Cohttp_lwt__Body.to_string body >>= fun body -> (*Affichage de la réponse*)
-  print_string "Body : ";
-  print_string body;
-  print_string " Status : ";
-  print_string @@ Cohttp__.Code.string_of_status @@ Cohttp__Response.status resp;
-  print_newline ();
-  return (exit 1)
-  
-let () =  match Lwt_unix.fork () with
-  | 0 ->
-     Unix.sleep 2;
-     Printf.eprintf "client is %d\n%!" (Unix.getpid ());
-  (* Lwt_main.run (client ())*)
-  | pid ->
-     Printf.eprintf "server is %d\n%!" (Unix.getpid ());
-     Lwt_main.run server
+let () = Lwt_main.run server
