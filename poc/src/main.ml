@@ -37,17 +37,13 @@ let rec verifier_oauth liste_args =
       && !oauth_nonce <> "Error"
       && !oauth_timestamp <> "Error"
 
-
-let remove_args liste = 
- List.filter (fun (a,b) -> a <> "oauth_signature") liste
-
-
+(* Découper ça en plusieurs fonctions *)
 (*Avant : Uri.pct_encode *) (* Netencoding.Url.encode ~plus:false *)
 let signature_oauth liste_args http_method basic_uri secret =
   let couple_encode = (* 1 : encoder les keys/values *)
     List.map (
         fun (k,v) -> (Netencoding.Url.encode ~plus:false k, Netencoding.Url.encode ~plus:false v))
-    @@ remove_args liste_args
+    @@ List.filter (fun (a,b) -> a <> "oauth_signature") liste_args
   in
   let couple_trie =   (* 2 : Trier par valeur de key *)
     List.sort   
