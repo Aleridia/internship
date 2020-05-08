@@ -9,7 +9,7 @@ J'ai utilisé le logiciel [looping][looping] pour le représenter.
 
 * Token: c'est l'id unique de l'utilisateur. Il sera généré comme il l'est actuellement.
 
-* login_moodle: c'est le login que donnera Moodle à Pfitaxel lors d'une connexion *LTI*. Le champ sera vide si l'utilisateur s'identifie uniquement via Pfitaxel.
+* login_moodle: c'est le login que donnera Moodle à Pfitaxel lors d'une connexion *LTI*. Le champ sera vide si l'utilisateur s'identifie uniquement via Pfitaxel. Ce champ sera généré grâce au paramètres **oauth_consumer_key** et **user_id** de la requête *LTI*, afin d'avoir un login_moodle unique pour chaque utilisateur. 
 
 * login_pfitaxel: le login utilisé pour s'identifier dans Pfitaxel. Il sera vide si l'utilisateur ne passe que par Moodle. Si l'utilisateur veut se connecter via Pfitaxel sans passer par Moodle et que ce champ est vide, il lui faudra alors créer un compte sur Pfitaxel en renseignant son token (Voir [maquette][maquette_token]).
 
