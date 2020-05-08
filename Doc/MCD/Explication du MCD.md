@@ -1,6 +1,6 @@
 # Explication du MCD
 
-![MCD](/home/lapin/stage/Doc/MCD/MCD.png)
+![MCD](MCD.png)
 
 Voici la représentation de données que je propose.
 J'ai utilisé le logiciel [looping][looping] pour le représenter.
@@ -38,4 +38,4 @@ J'ai utilisé le logiciel [looping][looping] pour le représenter.
 
 [authentification]: https://github.com/Aleridia/internship/blob/master/Doc/Authentification.md
 [looping]: https://www.looping-mcd.fr/
-[maquette_token]: 
+[maquette_token]: https://github.com/Aleridia/internship/blob/master/Doc/Maquette/Cr%C3%A9er%20un%20compte.png
