@@ -8,7 +8,7 @@
 
 .PHONY: all clean byte native profile debug sanity test
 
-OCB_FLAGS = -use-ocamlfind -I src -I lib
+OCB_FLAGS = -use-ocamlfind -I src
 OCB = ocamlbuild $(OCB_FLAGS)
 
 all: native byte # profile debug
@@ -31,7 +31,7 @@ debug: sanity
 
 # check that packages can be found
 sanity:
-	ocamlfind query lwt cohttp cohttp-lwt-unix logs jwto lwt.unix lwt_ppx
+	ocamlfind query lwt cohttp-lwt-unix lwt.unix
 
 test: native
 	echo '[1, 2, "three", {"four": 4}]' | ./main.native

@@ -1,5 +1,4 @@
 open Lwt
-open Cohttp
 open Cohttp_lwt_unix
 open Printf
 
@@ -24,7 +23,7 @@ let rec get_value key =
   | _ -> "Error"
 
 
-let rec verifier_oauth liste_args =
+let verifier_oauth liste_args =
   (* Traitement de la requête POST *)
       oauth_signature := get_value "oauth_signature" liste_args;
       oauth_timestamp := get_value "oauth_timestamp" liste_args;
@@ -43,7 +42,7 @@ let signature_oauth liste_args http_method basic_uri secret =
   let couple_encode = (* 1 : encoder les keys/values *)
     List.map (
         fun (k,v) -> (Netencoding.Url.encode ~plus:false k, Netencoding.Url.encode ~plus:false v))
-    @@ List.filter (fun (a,b) -> a <> "oauth_signature") liste_args
+    @@ List.filter (fun (a,_) -> a <> "oauth_signature") liste_args
   in
   let couple_trie =   (* 2 : Trier par valeur de key *)
     List.sort   
@@ -56,7 +55,7 @@ let signature_oauth liste_args http_method basic_uri secret =
     String.concat "&"
     @@ List.map
          (fun (k,v) -> k ^ "=" ^ v) couple_trie
-  in 
+  in  
   let signature_base_string =     (* 4 : Ajouter la méthode HTTP ainsi que l'uri *)
     sprintf "%s&%s&%s" (String.uppercase_ascii http_method) (Netencoding.Url.encode ~plus:false basic_uri) (Netencoding.Url.encode ~plus:false liste_concat)
   in
@@ -104,6 +103,5 @@ let server =
   in
 
   Server.create ~backlog:10 ~mode:(`TCP (`Port 8000)) (Server.make ~callback ())
-
 
 let () = Lwt_main.run server

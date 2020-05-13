@@ -1,0 +1,4 @@
+(executable
+ (name main)
+ (libraries lwt.unix cohttp-lwt-unix netstring tls)
+ (link_flags (-linkall)))

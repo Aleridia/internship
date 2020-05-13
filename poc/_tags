@@ -1,4 +1,3 @@
-true:   package(tls),package(str),package(gapi-ocaml),package(lwt),package(lwt_ppx),package(logs),package(lwt.unix),package(cohttp),package(cohttp-lwt-unix)
-true:   bin_annot,thread
-
+true:   package(netstring),package(tls),package(lwt.unix),package(cohttp-lwt-unix)
+true: 	thread
 
