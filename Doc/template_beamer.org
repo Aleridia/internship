@@ -1,0 +1,51 @@
+#+TITLE: Titre
+#+AUTHOR: Maxime Salvagnac
+#+EMAIL: maxime.salvagnac@univ-tlse3.fr
+#+DATE: 
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE: fr
+#+LATEX_HEADER: \usepackage[francais]{babel}
+#+latex_header: % \ifdefined\beamercolorbox\AtBeginSection[]{\begin{frame}<beamer>\frametitle{Plan}\tableofcontents[currentsection]\end{frame}}\fi
+#+latex_header: \ifdefined\beamercolorbox\institute[IRIT]{\small\vspace{-1em}~\\Équipe ACADIE, Laboratoire IRIT\\Université Toulouse III - Paul Sabatier}\fi
+#+BEAMER_THEME: Boadilla
+#+BEAMER_FRAME_LEVEL: 2
+#+OPTIONS: H:2 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS: TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+#+startup: beamer
+#+COLUMNS: %40ITEM %10BEAMER_env(Env) %9BEAMER_envargs(Env Args) %4BEAMER_col(Col) %10BEAMER_extra(Extra)
+#+MACRO: beginsmall @@latex:\begingroup\footnotesize@@@@html:@@
+#+MACRO: end @@latex:\endgroup@@@@html:@@
+#+MACRO: latexhtml @@latex:$1@@@@html:$2@@
+#+MACRO: bigbreak {{{latexhtml(\bigbreak,<br/>)}}}
+* Section 1
+** Titre slide
+Un paragraphe.
+
+Un autre paragraphe.
+{{{bigbreak}}}
+Un autre paragraphe plus loin.
+
+** Autre slide
+Du code $\mathcal{M}_a^{\text{th}}$.
+
+* Section 2
+** Slide de la section 2
+Du texte.
+
+* COMMENT Remarques + Variables locales
+# ####################################################################
+# Utiliser le raccourci "C-c C-e l P"
+# (= Export to LaTeX as PDF file (Beamer))
+# Ouvrir le fichier PDF compilé, le laisser ouvert pour les prochaines
+# recompilations.
+# ####################################################################
+
+# Local Variables:
+# org-beamer-outline-frame-title: "Plan"
+# End:
