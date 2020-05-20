@@ -65,7 +65,7 @@ Solutions :
   * Une avec le token comme key et des données en value (Comme le nickname)
   * Une autre pour la nouvelle implémentation :
     * On garde le token comme key, et il servira de login pour l'utilisateur. L'email sera là pour la récupération du compte. En value on met le `record` utilisateur.
-    * On met en place un système de mapping de données. On va séparer le login_moodle et le login_pfitaxel en deux représentation, mais qui seront identiques dans le concept. Le login sera la key, et la value sera le token associé à ce login. Une fois le token récupéré, il nous suffira de faire comme le point ci-dessus. C'est plus simple pour l'association de compte car il suffira juste de créer une entrée dans le "registre" irmin voulu.
+    * On met en place un système de mapping de données. On va séparer le login_moodle et le login_pfitaxel en deux représentations, mais qui seront identiques dans le concept. Le login sera la key, et la value sera le token associé à ce login. Une fois le token récupéré, il nous suffira de faire comme le point ci-dessus. C'est plus simple pour l'association de compte car il suffira juste de créer une entrée dans le "registre" irmin voulu.
 
 
 

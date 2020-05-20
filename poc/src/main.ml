@@ -185,7 +185,7 @@ end
 
 (* Manipulation d'irmin *)
 module Git_store = Irmin_unix.Git.FS.KV(Utilisateur)
-module Git_store_tok = Irmin_unix.Git.FS.KV(Irmin.Contents.String)
+module Git_store_tok = Irmin_unix.Git.FS.KV(Irmin.Contents.String) (* Liste via module ? *)
 
 let git_config = Irmin_git.config ~bare:true "./irmin/" (* Utilisateurs *)
 let git_config_tok = Irmin_git.config ~bare:true "./token/" (* Token index *)
