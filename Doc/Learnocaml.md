@@ -36,24 +36,41 @@ Ce qui n'est pas possible :
 
 
 
-
-
 Modifications :
 
-En réalité j'ai juste changé le traitement en rajoutant un booléen `teacher` dans la fonction, qui indique si on veut les token teacher ou non 
+Utilisation de irmin 1.4 et de irmin-unix 1.3.3.
 
-* Si true : Je vérifie que le dossier "X" existe.
-  * Si false : Je renvoie une liste vide.
-  * Si true, je fais le traitement mais en mettant "X"  comme paramètre de la fonction scan (le dossier courant).
-* Si false : Aucun changement.
+On peut mettre tous les champs dans les key et le token dans la value. Pas besoin de vérifier si le token est unique car on a la certitude qu'il l'est grâce au système de création de dossier.
 
 
 
-Le gain de temps est non négligeable !
+#### Problème :
+
+##### Comment avoir toutes les keys ? 
+
+* Avoir la dernière version et utiliser fold
+* Essayer un truc avec Tree.diff (Comment manipuler des Irmin.diff ?)
+* Essayer de naviguer dans un Tree avec les nodes (Mais si plusieurs nodes, comment je passe au suivant dans le Tree ?)
+* Mettre les tokens dans un fichier à part (Au moins on esquive le soucis et ça nous fait un index qui est moins lourd)
 
 
 
-Réflexion : 
+##### Comment organiser les données ?
 
-Si le booléen est à false, est-ce que ça vaut le coup de changer la fonction pour exclure le dossier "X" du traitement ? Car il y a peu de teachers donc en soi cela prend peu de temps. Car la modification de la fonction risque d'augmenter un peu le temps de traitement.
+Si je mets le token comme key, il y a un problème. Car l'utilisateur va se login avec soit son login_moodle soit son login_pfitaxel. Mais si c'est l'ancienne version il va se login avec son token.
+
+Solutions : 
+
+* Faire deux représentations de données : 
+  * Une avec le token comme key et des données en value (Comme le nickname)
+  * Une autre pour la nouvelle implémentation :
+    * On garde le token comme key, et il servira de login pour l'utilisateur. L'email sera là pour la récupération du compte. En value on met le `record` utilisateur.
+    * On met en place un système de mapping de données. On va séparer le login_moodle et le login_pfitaxel en deux représentation, mais qui seront identiques dans le concept. Le login sera la key, et la value sera le token associé à ce login. Une fois le token récupéré, il nous suffira de faire comme le point ci-dessus. C'est plus simple pour l'association de compte car il suffira juste de créer une entrée dans le "registre" irmin voulu.
+
+
+
+#### Concurrence
+
+Voir : https://mirage.github.io/irmin/irmin-unix/Irmin_unix/Git/FS/KV/index.html#val-with_tree
+Pour le moment j'ai mis à `Merge
 
