@@ -1,0 +1,9 @@
+{
+  "nickname": "Michek",
+  "exercises-editors": {
+    "demo": [
+      1589367021.757,
+      "\nlet plus x y = x + y ;;\nlet plus_tests = [\n  ((1, 1), 2);\n  ((1, 0), 1)\n];;\n\nlet minus x y = y - x ;;\nlet minus_tests = [\n  ((1, 2), 1)\n];;\n\nlet times x y = x *;;\n                \nlet pst z = z + 2;;\n\nlet ouioui = \"a\";;"
+    ]
+  }
+}

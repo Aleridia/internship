@@ -2,7 +2,6 @@ open Lwt
 open Cohttp_lwt_unix
 open Printf
 open Lwt.Infix
-open Irmin_unix
 
 (*************************** Variables ******************)
 
@@ -146,104 +145,13 @@ let get_tokens ?(teacher=false) () =
             with Failure _ -> Lwt.return acc
           ) directory []
 
-(********************************* Irmin *******************************)
 
-(* Module utilisateur *)
-type utilisateur = {
-    token: string;
-    login_moodle: string;
-    login_pfitaxel: string;
-    token_used: bool;
-    password_pfitaxel: string;
-    is_teacher: bool;
-  }
+(*********************** Traitement simple de fichiers avec une liste de tokens **********************)
+open Bd
+let simple_json =
+  Server.respond_string ~status:`OK ~body:("Oui") ()
 
-module Utilisateur = struct
-  type t = utilisateur
-  let t =
-    let open Irmin.Type in
-    record "utilisateur" (fun token login_moodle login_pfitaxel token_used password_pfitaxel is_teacher ->
-        {token; login_moodle; login_pfitaxel; token_used; password_pfitaxel; is_teacher})
-    |+ field "token" string (fun t -> t.token)
-    |+ field "login_moodle" string (fun t -> t.login_moodle)
-    |+ field "login_pfitaxe" string (fun t -> t.login_pfitaxel)
-    |+ field "token_used" bool (fun t -> t.token_used)
-    |+ field "password_pfitaxel" string (fun t -> t.password_pfitaxel)
-    |+ field "is_teacher" bool (fun t -> t.is_teacher)
-    |> sealr
-
-  let pp = Irmin.Type.pp_json t
-
-  let of_string s =
-    let decoder = Jsonm.decoder (`String s) in
-    Irmin.Type.decode_json t decoder
-
-  let merge = Irmin.Merge.(option (idempotent t))
-
-end
-
-
-(* Manipulation d'irmin *)
-module Git_store = Irmin_unix.Git.FS.KV(Utilisateur)
-module Git_store_tok = Irmin_unix.Git.FS.KV(Irmin.Contents.String) (* Liste via module ? *)
-
-let git_config = Irmin_git.config ~bare:true "./irmin/" (* Utilisateurs *)
-let git_config_tok = Irmin_git.config ~bare:true "./token/" (* Token index *)
-
-let master config = Git_store.Repo.v config >>= Git_store.master
-let branch config name = Git_store.Repo.v config >>= fun repo -> Git_store.of_branch repo name
-
-let user_1 = {
-    token = "lkn,l";
-    login_moodle = "sdszr";
-    login_pfitaxel = "ezfsef";
-    token_used = false;
-    password_pfitaxel = "zfsf";
-    is_teacher= false;
-  }
-
-
-(* Tree.list et Tree.of_node *)
-(*let liste = Git_store.Repo.v git_config >>= Git_store.master >>= Git_store.tree >>= fun t ->
-            let rec eval retour tree =
-              if Git_store.Tree.empty tree then Lwt.return_false
-              else
-                match tree with 
-              | `Contents (u,_) -> u.token::return
-              | `Node n -> eval return @@ Git_store.Tree.of_node n
-            in
-              Lwt.return @@ String.concat "&&" @@ eval [] t*)
-
-
-let creer_index ()=
-  Git_store_tok.Repo.v git_config_tok >>= Git_store_tok.master >>= fun t ->
-  let info = Irmin_unix.info "Creating index" in
-  Git_store_tok.with_tree t [] ~info ~strategy:`Set (fun tree ->
-      let tree = match tree with Some t -> t | None -> Git_store_tok.Tree.empty in
-      let body = get_tokens ()>>= fun s ->Lwt.return @@ String.concat "&" s in
-      body >>= fun s -> Git_store_tok.Tree.add tree ["tok"] s >>= Lwt.return_some) 
-
-let get_index ()= (* Cela implique de la mettre à jour à chaque création de token *)
-  (*creer_index () >>= fun () -> *)
-  Git_store_tok.Repo.v git_config_tok >>= Git_store_tok.master >>= fun t ->
-  Git_store_tok.get t ["tok"] >|= fun s -> s
-
-let irmin =
-  Git_store.Repo.v git_config >>= Git_store.master >>= fun t ->
-  let info = Irmin_unix.info "transac ex" in (* Info du commit *)
-  Git_store.with_tree t [] ~info ~strategy:`Merge (fun tree -> (* Manipuler le tree, gère la concurrence avec le strategy *)
-      let tree = match tree with Some t -> t | None -> Git_store.Tree.empty in
-      Git_store.Tree.add tree ["1";"test1"] user_1 >>= fun tree ->
-      Git_store.Tree.add tree ["1";"test2"] user_1 >>= Lwt.return_some) >>= fun () ->
-  get_index () >>= fun s ->
-  Printf.printf "Token : %s  \n%!" s;
-  Printf.printf "Oui \n%!";
-  Server.respond_string ~status:`OK ~body:"End" ()
-
-
-
-
-                   (**************************** Serveur et lancement du serveur *******************************)
+                  (**************************** Serveur et lancement du serveur *******************************)
 
 (* Traitement de la requête POST *)
 let traiter_requete req =
@@ -257,7 +165,6 @@ let traiter_requete req =
       else 
         (* Vérifier la signature *)
         let fun_perso = signature_oauth liste_args "post" url my_secret in
-        (* Req = les parameters déjà encodés et mis comme il faut *)
         if fun_perso = !oauth_signature then
           Server.respond_string ~status:`OK ~body:("Signature OK (" ^ fun_perso ^ ")") ()
         else
@@ -276,7 +183,7 @@ let server =
                    | `Yes -> body |> Cohttp_lwt.Body.to_string >>= traiter_requete
                    | `No -> Server.respond_string ~status: `Bad_request ~body: "Missing POST body" ()
                    | _ -> Server.respond_string ~status: `Bad_request ~body: "Unknown POST body" ())
-       | `GET -> irmin 
+       | `GET -> simple_json
        | _ -> Server.respond_string ~status: `Not_acceptable ~body:"Unsuported request" () ) (* Si ce n'est pas POST *)
 
     | _ -> Server.respond_string ~status: `Not_found ~body:"Error 404" ()  (* Error 404 *)

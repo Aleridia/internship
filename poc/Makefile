@@ -31,7 +31,7 @@ debug: sanity
 
 # check that packages can be found
 sanity:
-	ocamlfind query lwt cohttp-lwt-unix lwt.unix
+	ocamlfind query yojson lwt cohttp-lwt-unix lwt.unix
 
 test: native
 	echo '[1, 2, "three", {"four": 4}]' | ./main.native

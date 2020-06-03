@@ -74,3 +74,7 @@ Solutions :
 Voir : https://mirage.github.io/irmin/irmin-unix/Irmin_unix/Git/FS/KV/index.html#val-with_tree
 Pour le moment j'ai mis à `Merge
 
+### Problèmes à régler
+
+* Stockage des tokens dans l'index : un String n'est pas trop "petit" ? Si on a beaucoup de tokens à stocker. Passer pas une liste ? Un big string ?
+* L'ajout d'un Token : il faut aussi l'ajouter dans l'index. Faire une fonction qui regroupe les deux ? Ajouter un appel pour l'ajout dans l'index après le traitement originel ?
