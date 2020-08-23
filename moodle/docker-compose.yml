@@ -1,3 +1,4 @@
+# https://github.com/bitnami/bitnami-docker-moodle/blob/0aa9ff42a27d42cd2bf5db12084d544e576e3cb0/docker-compose.yml
 version: '2'
 services:
   mariadb:
